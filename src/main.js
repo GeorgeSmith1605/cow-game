@@ -2,11 +2,14 @@ import { GameState } from './core/GameState.js';
 import { GameLoop } from './core/GameLoop.js';
 import { Storage } from './core/Storage.js';
 import { globalBus } from './core/EventBus.js';
+import { sound } from './core/Sound.js';
+import { ParticleManager } from './ui/ParticleManager.js';
 import { HATS } from './config/hats.js';
 
 // 1. Initialization
 const storage = new Storage();
 const state = new GameState(storage.load());
+const particleManager = new ParticleManager(document.body);
 
 // 2. DOM Elements
 const milkDisplay = document.getElementById('milk-display');
@@ -48,11 +51,14 @@ function renderWardrobe() {
     const actionBtn = card.querySelector('button');
     actionBtn.addEventListener('click', () => {
       if (!isOwned) {
-        if (!state.buyHat(hat.id)) {
+        if (state.buyHat(hat.id)) {
+          sound.playChime();
+        } else {
           alert('Not enough milk!');
         }
       } else {
         state.equipHat(hat.id);
+        sound.playPop();
       }
       renderWardrobe();
     });
@@ -74,19 +80,28 @@ globalBus.on('hat:changed', ({ equippedHat }) => {
   renderCowHat(equippedHat);
 });
 
-// Render state on launch
+// Render initial state
 globalBus.emit('milk:changed', { total: state.milk });
 globalBus.emit('rate:changed', { mps: state.getEffectiveMps() });
 renderCowHat(state.equippedHat);
 
-// 5. Interactions
+// 5. Interactions & Juice Triggers
 cowButton.addEventListener('pointerdown', (e) => {
   e.preventDefault();
-  state.addMilk(state.getEffectiveClick());
+  const earned = state.getEffectiveClick();
+  state.addMilk(earned);
+  sound.playPop();
+
+  // Determine tap coordinates for the floating particle
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX) || window.innerWidth / 2;
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY) || window.innerHeight / 2;
+
+  particleManager.spawnText(clientX, clientY, `+${earned}`);
 });
 
 btnFeed.addEventListener('click', () => {
   state.addBaseMps(1);
+  sound.playChime();
 });
 
 btnWardrobe.addEventListener('click', () => {
@@ -106,6 +121,7 @@ btnAdBoost.addEventListener('click', () => {
     btnAdBoost.textContent = 'Playing ad...';
     setTimeout(() => {
       state.addMilk(250);
+      sound.playChime();
       btnAdBoost.disabled = false;
       btnAdBoost.textContent = '📺 Watch Ad (+250 Milk)';
       alert('Reward claimed: +250 🥛!');
@@ -113,7 +129,7 @@ btnAdBoost.addEventListener('click', () => {
   }
 });
 
-// 6. Game Loop & Persistence
+// 6. Game Loop & Auto-Save
 const loop = new GameLoop((dt) => {
   const currentMps = state.getEffectiveMps();
   if (currentMps > 0) {
