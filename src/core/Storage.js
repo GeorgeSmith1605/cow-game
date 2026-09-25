@@ -7,9 +7,10 @@ export class Storage {
     try {
       const payload = {
         milk: state.milk,
-        milkPerClick: state.milkPerClick,
-        milkPerSecond: state.milkPerSecond,
-        equippedHat: state.equippedHat,
+        baseMps: state.baseMps,
+        baseClick: state.baseClick,
+        ownedHats: Array.from(state.ownedHats),
+        equippedHatId: state.equippedHatId,
         lastSavedTimestamp: Date.now()
       };
       localStorage.setItem(this.saveKey, JSON.stringify(payload));
@@ -21,19 +22,10 @@ export class Storage {
   load() {
     try {
       const data = localStorage.getItem(this.saveKey);
-      if (!data) return null;
-      return JSON.parse(data);
+      return data ? JSON.parse(data) : null;
     } catch (err) {
       console.warn('Unable to load from localStorage:', err);
       return null;
-    }
-  }
-
-  clear() {
-    try {
-      localStorage.removeItem(this.saveKey);
-    } catch (err) {
-      console.warn('Unable to clear save:', err);
     }
   }
 }
