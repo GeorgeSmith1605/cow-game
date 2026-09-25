@@ -90,7 +90,19 @@ export class AdService {
       const watched = confirm('🎬 [Dev Ad Preview]: Watch mock sponsor video for reward?');
       setTimeout(() => resolve(watched), 1000);
     });
-  }
-}
+    gameplayStart() {
+      if (window.CrazyGames?.SDK?.game?.gameplayStart) {
+        window.CrazyGames.SDK.game.gameplayStart();
+        console.log('CrazyGames: gameplayStart triggered');
+      }
+    }
 
-export const adService = new AdService();
+    gameplayStop() {
+      if (window.CrazyGames?.SDK?.game?.gameplayStop) {
+        window.CrazyGames.SDK.game.gameplayStop();
+        console.log('CrazyGames: gameplayStop triggered');
+      }
+    }
+
+
+    export const adService = new AdService();
