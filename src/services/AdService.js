@@ -4,45 +4,57 @@ export class AdService {
     this.provider = 'mock';
   }
 
+  // Poll briefly in case the external CDN script is still finishing download
+  async waitForSDK(timeoutMs = 3000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (window.CrazyGames && window.CrazyGames.SDK) return 'crazygames';
+      if (window.PokiSDK) return 'poki';
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return null;
+  }
+
   async init() {
     if (this.isInitialized) return;
 
-    if (window.CrazyGames && window.CrazyGames.SDK) {
+    const detected = await this.waitForSDK();
+
+    if (detected === 'crazygames') {
       try {
         await window.CrazyGames.SDK.init();
         this.provider = 'crazygames';
         this.isInitialized = true;
-        console.log('CrazyGames SDK v3 initialized');
+        console.log('CrazyGames SDK v3 ready');
 
-        // CrazyGames QA expects game loading start/stop events
-        if (window.CrazyGames.SDK.game && window.CrazyGames.SDK.game.loadingStart) {
+        // Required by CrazyGames QA to detect active game lifecycle
+        if (window.CrazyGames.SDK.game) {
           window.CrazyGames.SDK.game.loadingStart();
-          // Small delay then stop loading
           setTimeout(() => {
-            if (window.CrazyGames.SDK.game.loadingStop) {
-              window.CrazyGames.SDK.game.loadingStop();
-            }
-          }, 300);
+            window.CrazyGames.SDK.game.loadingStop();
+          }, 500);
         }
         return;
       } catch (err) {
-        console.warn('CrazyGames SDK init failed:', err);
+        console.warn('CrazyGames SDK init error, using mock:', err);
       }
     }
 
-    if (window.PokiSDK) {
+    if (detected === 'poki') {
       try {
         await window.PokiSDK.init();
         this.provider = 'poki';
         this.isInitialized = true;
         return;
       } catch (err) {
-        console.warn('Poki SDK init failed:', err);
+        console.warn('Poki SDK init error, using mock:', err);
       }
     }
 
+    // Default development fallback
     this.provider = 'mock';
     this.isInitialized = true;
+    console.log('Using local mock Ad provider');
   }
 
   async showRewardAd() {
@@ -51,13 +63,15 @@ export class AdService {
     if (this.provider === 'crazygames') {
       return new Promise((resolve) => {
         try {
-          window.CrazyGames.SDK.ad.requestAd('rewarded', {
+          const callbacks = {
             adFinished: () => resolve(true),
             adError: (error) => {
               console.warn('CrazyGames ad error:', error);
               resolve(false);
             }
-          });
+          };
+
+          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
         } catch (e) {
           console.warn('CrazyGames requestAd exception:', e);
           resolve(false);
@@ -71,6 +85,7 @@ export class AdService {
       });
     }
 
+    // Dev fallback
     return new Promise((resolve) => {
       const watched = confirm('🎬 [Dev Ad Preview]: Watch mock sponsor video for reward?');
       setTimeout(() => resolve(watched), 1000);
