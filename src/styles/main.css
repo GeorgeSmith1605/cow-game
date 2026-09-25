@@ -154,12 +154,35 @@ body {
 .ad-banner {
   background: #fff3cd;
   border: 1px solid #ffeeba;
-  padding: 10px;
+  padding: 10px 14px;
   border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
+}
+
+.ad-banner p {
+  margin: 0;
+  font-weight: 600;
+  color: #856404;
+}
+
+.ad-btn {
+  background: #28a745;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ad-btn:active {
+  transform: scale(0.96);
+
 }
 
 .ad-btn {
