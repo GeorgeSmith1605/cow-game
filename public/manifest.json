@@ -1,0 +1,16 @@
+{
+  "name": "The Grazing Guru",
+  "short_name": "GrazingGuru",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1e242b",
+  "theme_color": "#87ceeb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { adService } from './services/AdService.js';
 import { GameState } from './core/GameState.js';
 import { GameLoop } from './core/GameLoop.js';
 import { Storage } from './core/Storage.js';
@@ -10,7 +11,7 @@ import { HATS } from './config/hats.js';
 const storage = new Storage();
 const state = new GameState(storage.load());
 const particleManager = new ParticleManager(document.body);
-
+adService.init();
 // 2. DOM Elements
 const milkDisplay = document.getElementById('milk-display');
 const mpsDisplay = document.getElementById('mps-display');
@@ -114,19 +115,22 @@ btnCloseModal.addEventListener('click', () => {
 });
 
 // Simulated Rewarded Video Ad
-btnAdBoost.addEventListener('click', () => {
-  const confirmed = confirm('🎬 [Ad Simulation]: Watch 5-second sponsor video for +250 milk?');
-  if (confirmed) {
-    btnAdBoost.disabled = true;
-    btnAdBoost.textContent = 'Playing ad...';
-    setTimeout(() => {
-      state.addMilk(250);
-      sound.playChime();
-      btnAdBoost.disabled = false;
-      btnAdBoost.textContent = '📺 Watch Ad (+250 Milk)';
-      alert('Reward claimed: +250 🥛!');
-    }, 1500);
+btnAdBoost.addEventListener('click', async () => {
+  btnAdBoost.disabled = true;
+  btnAdBoost.textContent = 'Loading Ad...';
+
+  const success = await adService.showRewardAd();
+
+  if (success) {
+    state.addMilk(250);
+    sound.playChime();
+    alert('Reward claimed: +250 🥛!');
+  } else {
+    alert('Ad did not finish. No reward given.');
   }
+
+  btnAdBoost.disabled = false;
+  btnAdBoost.textContent = '📺 Watch Ad (+250 Milk)';
 });
 
 // 6. Game Loop & Auto-Save
